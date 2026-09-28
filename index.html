@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Oficina Pro</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">OP</div>
+        <div>
+          <strong>Oficina Pro</strong>
+          <span>Gestao mecanica</span>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Menu principal">
+        <button class="nav-item active" data-view="dashboard">Painel</button>
+        <button class="nav-item" data-view="clients">Cadastro de cliente</button>
+        <button class="nav-item" data-view="vehicles">Cadastro de veiculos</button>
+        <button class="nav-item" data-view="orders">Ordem de servico</button>
+        <button class="nav-item" data-view="cashier">Caixa</button>
+        <button class="nav-item" data-view="history">Historico</button>
+      </nav>
+      <div class="sidebar-footer">
+        <span>Status da oficina</span>
+        <strong id="open-count">0 OS abertas</strong>
+      </div>
+    </aside>
+
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Sistema para oficina mecanica</p>
+          <h1 id="view-title">Painel de controle</h1>
+        </div>
+        <div class="top-actions">
+          <input id="global-search" type="search" placeholder="Buscar cliente, documento, placa ou OS">
+          <div class="record-actions" aria-label="Ações da aba">
+            <button id="correct-record" class="ghost" type="button" disabled>Corrigir</button>
+            <button id="undo-change" class="ghost" type="button" disabled>Desfazer</button>
+            <button id="go-dashboard" class="ghost" type="button">Voltar</button>
+          </div>
+        </div>
+      </header>
+
+      <section id="dashboard" class="view active-view">
+        <div class="metrics">
+          <article class="metric">
+            <span>OS em andamento</span>
+            <strong id="metric-active">0</strong>
+          </article>
+          <article class="metric">
+            <span>Aguardando pecas</span>
+            <strong id="metric-parts">0</strong>
+          </article>
+          <article class="metric">
+            <span>Prontas para entrega</span>
+            <strong id="metric-ready">0</strong>
+          </article>
+          <article class="metric">
+            <span>Recebido no mes</span>
+            <strong id="metric-month">R$ 0,00</strong>
+          </article>
+        </div>
+
+        <div class="workspace">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>ATUALIZACOES</h2>
+            </div>
+            <div id="status-board" class="status-board"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="orders" class="view">
+        <div class="workspace">
+          <section class="panel">
+            <div class="panel-head with-action">
+              <div>
+                <h2>Ordens de servico</h2>
+                <span>Orcamento, execucao, pagamento e entrega</span>
+              </div>
+              <button class="primary" data-open-order>Nova OS</button>
+            </div>
+            <div id="orders-list" class="table-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="clients" class="view">
+        <div class="workspace two-columns">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Cadastro de clientes</h2>
+              <span>Dados de contato</span>
+            </div>
+            <form id="client-form" class="form-grid">
+              <input type="hidden" name="id">
+              <label>Nome<input name="name" required></label>
+              <label>Telefone<input name="phone" required></label>
+              <label>Documento<input name="document"></label>
+              <label>Email<input name="email" type="email"></label>
+              <label class="wide">Endereco<input name="address"></label>
+              <button class="primary wide" type="submit">Salvar cliente</button>
+            </form>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Clientes cadastrados</h2>
+              <span id="clients-total">0 registros</span>
+            </div>
+            <div id="clients-list" class="list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="vehicles" class="view">
+        <div class="workspace two-columns">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Cadastro de veiculos</h2>
+              <span>Veiculo ligado ao cliente</span>
+            </div>
+            <form id="vehicle-form" class="form-grid">
+              <input type="hidden" name="id">
+              <label>Cliente
+                <input name="clientSearch" list="vehicle-client-options" placeholder="Digite 4 caracteres do nome" autocomplete="off" required>
+                <datalist id="vehicle-client-options"></datalist>
+                <input type="hidden" name="clientId">
+              </label>
+              <label>Veiculo<input name="vehicleName" required></label>
+              <label>Placa<input name="plate" required></label>
+              <label>Cor<input name="color" required></label>
+              <label>Ano<input name="year" inputmode="numeric"></label>
+              <button class="primary wide" type="submit">Salvar veiculo</button>
+            </form>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Veiculos cadastrados</h2>
+              <span id="vehicles-total">0 registros</span>
+            </div>
+            <div id="vehicles-list" class="list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="catalog" class="view">
+        <div class="workspace two-columns">
+          <section class="panel">
+            <div class="panel-head with-action">
+              <div>
+                <h2>Mao de obra</h2>
+                <span>Maos de obra recorrentes</span>
+              </div>
+            </div>
+            <form id="service-form" class="inline-form">
+              <input type="hidden" name="id">
+              <input name="name" placeholder="Descricao da mao de obra" required>
+              <input name="price" placeholder="Valor da mao de obra" inputmode="decimal" required>
+              <button class="primary" type="submit">Adicionar</button>
+            </form>
+            <div id="services-list" class="list"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Pecas</h2>
+              <span>Estoque e precos</span>
+            </div>
+            <form id="part-form" class="form-grid compact">
+              <input type="hidden" name="id">
+              <input name="name" placeholder="Nome da peca" required>
+              <input name="price" placeholder="Valor bruto" inputmode="decimal" required>
+              <input name="cost" placeholder="Custo unitario interno" inputmode="decimal" required>
+              <input name="stock" placeholder="Estoque" inputmode="numeric" required>
+              <button class="primary" type="submit">Adicionar</button>
+            </form>
+            <div id="parts-list" class="list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="cashier" class="view">
+        <div class="workspace two-columns">
+          <section class="panel">
+            <div class="panel-head with-action">
+              <div>
+                <h2>Caixa de pagamento</h2>
+                <span>Recebimentos por OS</span>
+              </div>
+              <button id="open-cash-closing" class="primary" type="button">Fechamento de caixa</button>
+            </div>
+            <form id="payment-form" class="form-grid">
+              <input type="hidden" name="id">
+              <label>Ordem de servico
+                <input name="orderSearch" list="payment-order-options" placeholder="Digite os 4 ultimos numeros da OS" inputmode="numeric" maxlength="4" autocomplete="off" required>
+                <datalist id="payment-order-options"></datalist>
+                <input type="hidden" name="orderId">
+              </label>
+              <label>Valor recebido<input name="amount" inputmode="decimal" required></label>
+              <label>Forma<select name="method" required>
+                <option>Pix</option>
+                <option>Dinheiro</option>
+                <option>Cartao de debito a vista</option>
+                <option>Cartao de credito a vista</option>
+                <option>Cartao de credito parcelado</option>
+              </select></label>
+              <label id="installments-field" hidden>Parcelas
+                <select name="installments">
+                  <option value="">Selecione</option>
+                  <option value="2">2x</option>
+                  <option value="3">3x</option>
+                  <option value="4">4x</option>
+                  <option value="5">5x</option>
+                  <option value="6">6x</option>
+                  <option value="7">7x</option>
+                  <option value="8">8x</option>
+                  <option value="9">9x</option>
+                  <option value="10">10x</option>
+                  <option value="11">11x</option>
+                  <option value="12">12x</option>
+                </select>
+              </label>
+              <label>Data<input name="date" placeholder="dd/mm/aaaa" inputmode="numeric" maxlength="10" required></label>
+              <button class="primary wide" type="submit">Registrar pagamento</button>
+            </form>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Movimentacao</h2>
+              <span id="cashier-total">R$ 0,00</span>
+            </div>
+            <div id="payments-list" class="list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="history" class="view">
+        <div class="workspace">
+          <section class="panel">
+            <div class="panel-head with-action">
+              <div>
+                <h2>Historico conectado</h2>
+                <span>Linha do tempo por veiculo e OS</span>
+              </div>
+              <div class="history-actions">
+                <select id="history-filter"></select>
+                <button id="download-history-pdf" class="primary" type="button">Baixar PDF</button>
+              </div>
+            </div>
+            <div id="history-list" class="timeline"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="order-dialog">
+      <form id="order-form" method="dialog" class="modal-form">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Ordem de servico</p>
+            <h2>Registrar atendimento</h2>
+          </div>
+          <button class="ghost icon" value="cancel" type="button" data-close-modal aria-label="Fechar">x</button>
+        </div>
+        <input type="hidden" name="id">
+        <div class="form-grid">
+          <label>Documento do cliente<input name="clientDocument" placeholder="CPF ou CNPJ" required></label>
+          <label>Cliente<select name="clientId" required></select></label>
+          <label>Veiculo<select name="vehicleId" required></select></label>
+          <label>Status<select name="status" required></select></label>
+          <label>Entrada (dia/mes/ano)<input name="entryDate" placeholder="dd/mm/aaaa" inputmode="numeric" required></label>
+          <label>Previsao (dia/mes/ano)<input name="dueDate" placeholder="dd/mm/aaaa" inputmode="numeric"></label>
+          <div id="order-client-summary" class="client-summary wide"></div>
+          <label class="wide">Descricao do problema<textarea name="complaint" rows="3" required></textarea></label>
+          <label class="wide">Diagnostico<textarea name="diagnosis" rows="3"></textarea></label>
+          <label class="wide">Observacao<textarea name="observation" rows="3"></textarea></label>
+        </div>
+        <div class="pickers">
+          <section>
+            <h3>Mao de obra</h3>
+            <div class="picker-row labor-row">
+              <input id="order-labor-amount" placeholder="Valor" inputmode="decimal">
+            </div>
+          </section>
+          <section>
+            <h3>Pecas</h3>
+            <button class="ghost part-add-toggle" id="open-order-part-entry" type="button">Cadastrar produto</button>
+            <div class="part-entry" id="order-part-entry">
+              <div class="part-search-box">
+                <input id="order-part-search" placeholder="PESQUISA" autocomplete="off">
+                <div id="order-part-options" class="part-options" hidden></div>
+              </div>
+              <input id="order-part-id" type="hidden">
+              <input id="order-part-unit-price" type="hidden">
+              <input id="order-part-price" placeholder="Valor total" inputmode="decimal" readonly>
+              <button class="ghost" id="add-order-part" type="button">Salvar peca</button>
+            </div>
+            <div id="order-parts" class="selected-list"></div>
+          </section>
+        </div>
+        <div class="modal-total">
+          <span>Total da OS</span>
+          <strong id="order-total-preview">R$ 0,00</strong>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost" value="cancel" type="button" data-close-modal>Cancelar</button>
+          <button id="print-order" class="ghost" type="button">Imprimir OS</button>
+          <button class="primary" type="submit">Salvar OS</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="product-dialog" class="product-dialog">
+      <form id="product-form" method="dialog" class="modal-form">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Produto</p>
+            <h2>Cadastrar produto</h2>
+          </div>
+          <button class="ghost icon" value="cancel" type="button" data-close-product aria-label="Fechar">x</button>
+        </div>
+        <div class="form-grid product-form-grid">
+          <label class="wide">Produto<input name="name" required></label>
+          <label class="wide">Valor de custo<input name="cost" inputmode="decimal" required></label>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost" value="cancel" type="button" data-close-product>Cancelar</button>
+          <button class="primary" type="submit">Salvar produto</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="cash-closing-dialog" class="cash-closing-dialog">
+      <div class="cash-closing-content">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Caixa</p>
+            <h2>Fechamento de caixa</h2>
+          </div>
+          <button class="ghost icon" type="button" data-close-cash-closing aria-label="Fechar">x</button>
+        </div>
+        <div class="closing-period-row">
+          <label>Periodo
+            <select id="cash-closing-period">
+              <option value="day">Dia</option>
+              <option value="week">Semana</option>
+              <option value="month">Mes</option>
+            </select>
+          </label>
+          <span id="cash-closing-range"></span>
+        </div>
+        <section class="closing-totals" aria-live="polite">
+          <div class="closing-total">
+            <span>Valor recebido</span>
+            <strong id="closing-received">R$ 0,00</strong>
+          </div>
+          <div class="closing-total">
+            <span>Custo das pecas usadas</span>
+            <strong id="closing-parts-cost">R$ 0,00</strong>
+          </div>
+          <div class="closing-total">
+            <span>Outros custos</span>
+            <strong id="closing-other-cost">R$ 0,00</strong>
+          </div>
+          <div class="closing-total">
+            <span>Custo total</span>
+            <strong id="closing-cost">R$ 0,00</strong>
+          </div>
+          <div class="closing-total profit-total">
+            <span>Lucro</span>
+            <strong id="closing-profit">R$ 0,00</strong>
+          </div>
+        </section>
+        <section class="closing-cost-section">
+          <div class="closing-section-head">
+            <h3>Pecas usadas no periodo</h3>
+            <span>Custo interno conforme as quantidades das OS.</span>
+          </div>
+          <div id="closing-parts-list" class="list"></div>
+        </section>
+        <section class="closing-cost-section">
+          <div class="closing-section-head">
+            <h3>Outros custos</h3>
+            <span>Os custos registrados entram no fechamento do periodo selecionado.</span>
+          </div>
+          <form id="cost-form" class="form-grid cost-form">
+            <label class="wide">Descricao<input name="description" placeholder="Ex.: compra de pecas, aluguel" required></label>
+            <label>Valor<input name="amount" inputmode="decimal" required></label>
+            <label>Data<input name="date" placeholder="dd/mm/aaaa" inputmode="numeric" maxlength="10" required></label>
+            <button class="primary wide" type="submit">Registrar custo</button>
+          </form>
+          <div id="closing-costs-list" class="list"></div>
+        </section>
+        <div class="modal-actions">
+          <button class="ghost" type="button" data-close-cash-closing>Fechar</button>
+        </div>
+      </div>
+    </dialog>
+
+    <section id="order-print-sheet" class="order-print-sheet" aria-hidden="true"></section>
+
+    <template id="empty-template">
+      <div class="empty-state">
+        <strong>Nenhum registro encontrado</strong>
+        <span>Cadastre novos itens para movimentar a oficina.</span>
+      </div>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>

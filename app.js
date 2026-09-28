@@ -270,6 +270,7 @@ function bindRecordActions() {
   document.querySelector("#correct-record").addEventListener("click", correctSelectedRecord);
   document.querySelector("#undo-change").addEventListener("click", undoLastChange);
   document.querySelector("#go-dashboard").addEventListener("click", () => showView("dashboard"));
+  document.querySelector("#logout-button").addEventListener("click", logout);
   document.addEventListener("click", (event) => {
     if (event.target.closest("button, a, input, select, textarea")) return;
     const record = event.target.closest("[data-record-type][data-record-id]");
@@ -278,6 +279,14 @@ function bindRecordActions() {
     updateRecordActions();
     renderRecordSelection();
   });
+}
+
+async function logout() {
+  try {
+    await fetch("/api/logout", { method: "POST" });
+  } finally {
+    window.location.href = "/login";
+  }
 }
 
 function showView(viewName) {

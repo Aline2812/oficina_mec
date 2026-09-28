@@ -1,13 +1,22 @@
 const express = require("express");
+const crypto = require("crypto");
 const path = require("path");
 const { Pool } = require("pg");
 
 const app = express();
 const port = process.env.PORT || 3000;
 const databaseUrl = process.env.DATABASE_URL;
+const adminUser = process.env.ADMIN_USERNAME || "admin";
+const adminPassword = process.env.ADMIN_PASSWORD;
+const sessionSecret = process.env.SESSION_SECRET || "dev-session-secret";
+const isProduction = process.env.NODE_ENV === "production";
 
 if (!databaseUrl) {
   console.warn("DATABASE_URL nao configurada. A API de banco retornara erro ate configurar o PostgreSQL.");
+}
+
+if (!adminPassword && isProduction) {
+  console.warn("ADMIN_PASSWORD nao configurada. O login ficara bloqueado em producao.");
 }
 
 const pool = databaseUrl
@@ -18,7 +27,75 @@ const pool = databaseUrl
   : null;
 
 app.use(express.json({ limit: "5mb" }));
-app.use(express.static(__dirname));
+app.use(express.urlencoded({ extended: false }));
+
+function parseCookies(header = "") {
+  return Object.fromEntries(header
+    .split(";")
+    .map((cookie) => cookie.trim().split("="))
+    .filter(([key, value]) => key && value)
+    .map(([key, value]) => [key, decodeURIComponent(value)]));
+}
+
+function sign(value) {
+  return crypto
+    .createHmac("sha256", sessionSecret)
+    .update(value)
+    .digest("base64url");
+}
+
+function createSessionToken(username) {
+  const payload = Buffer.from(JSON.stringify({
+    username,
+    exp: Date.now() + 1000 * 60 * 60 * 12
+  })).toString("base64url");
+  return `${payload}.${sign(payload)}`;
+}
+
+function verifySessionToken(token) {
+  if (!token || !token.includes(".")) return false;
+  const [payload, signature] = token.split(".");
+  const expected = sign(payload);
+  if (signature.length !== expected.length) return false;
+  const signatureBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expected);
+  if (!crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) return false;
+
+  try {
+    const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    return session.username === adminUser && Number(session.exp) > Date.now();
+  } catch (error) {
+    return false;
+  }
+}
+
+function isAuthenticated(request) {
+  const cookies = parseCookies(request.headers.cookie);
+  return verifySessionToken(cookies.oficina_session);
+}
+
+function requireAuth(request, response, next) {
+  if (isAuthenticated(request)) {
+    next();
+    return;
+  }
+
+  if (request.path.startsWith("/api/")) {
+    response.status(401).json({ error: "Nao autorizado" });
+    return;
+  }
+
+  response.redirect("/login");
+}
+
+function loginBlocked() {
+  return isProduction && !adminPassword;
+}
+
+function validCredentials(username, password) {
+  const expectedPassword = adminPassword || "admin";
+  return username === adminUser && password === expectedPassword;
+}
 
 async function ensureSchema() {
   if (!pool) return;
@@ -31,7 +108,53 @@ async function ensureSchema() {
   `);
 }
 
-app.get("/api/data", async (request, response) => {
+app.get("/login", (request, response) => {
+  if (isAuthenticated(request)) {
+    response.redirect("/");
+    return;
+  }
+  response.sendFile(path.join(__dirname, "login.html"));
+});
+
+app.post("/api/login", (request, response) => {
+  if (loginBlocked()) {
+    response.status(503).send("Login bloqueado. Configure ADMIN_PASSWORD no servidor.");
+    return;
+  }
+
+  const { username, password } = request.body;
+  if (!validCredentials(username, password)) {
+    response.redirect("/login?error=1");
+    return;
+  }
+
+  const secure = request.secure || request.headers["x-forwarded-proto"] === "https";
+  const cookieParts = [
+    `oficina_session=${encodeURIComponent(createSessionToken(username))}`,
+    "HttpOnly",
+    "SameSite=Lax",
+    "Path=/",
+    "Max-Age=43200"
+  ];
+  if (secure) cookieParts.push("Secure");
+  response.setHeader("Set-Cookie", cookieParts.join("; "));
+  response.redirect("/");
+});
+
+app.post("/api/logout", (request, response) => {
+  response.setHeader("Set-Cookie", "oficina_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0");
+  response.json({ ok: true });
+});
+
+app.get("/app.js", requireAuth, (request, response) => {
+  response.sendFile(path.join(__dirname, "app.js"));
+});
+
+app.get("/styles.css", requireAuth, (request, response) => {
+  response.sendFile(path.join(__dirname, "styles.css"));
+});
+
+app.get("/api/data", requireAuth, async (request, response) => {
   if (!pool) {
     response.status(503).json({ error: "DATABASE_URL nao configurada" });
     return;
@@ -47,7 +170,7 @@ app.get("/api/data", async (request, response) => {
   }
 });
 
-app.put("/api/data", async (request, response) => {
+app.put("/api/data", requireAuth, async (request, response) => {
   if (!pool) {
     response.status(503).json({ error: "DATABASE_URL nao configurada" });
     return;
@@ -71,7 +194,7 @@ app.put("/api/data", async (request, response) => {
   }
 });
 
-app.get("*", (request, response) => {
+app.get("*", requireAuth, (request, response) => {
   response.sendFile(path.join(__dirname, "index.html"));
 });
 

@@ -8,6 +8,7 @@ const statuses = [
 ];
 
 const storageKey = "oficina-pro-data";
+const apiDataUrl = "/api/data";
 
 const seedData = {
   clients: [
@@ -147,6 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindOrderDialog();
   bindRecordActions();
   render();
+  hydrateDataFromApi();
 });
 
 function loadData() {
@@ -202,6 +204,36 @@ function dbClientDocument(data, clientId) {
 
 function saveData() {
   localStorage.setItem(storageKey, JSON.stringify(db));
+  saveDataToApi();
+}
+
+async function hydrateDataFromApi() {
+  try {
+    const response = await fetch(apiDataUrl);
+    if (!response.ok) return;
+    const payload = await response.json();
+    if (!payload.data) {
+      await saveDataToApi();
+      return;
+    }
+    db = normalizeData(payload.data);
+    localStorage.setItem(storageKey, JSON.stringify(db));
+    render();
+  } catch (error) {
+    console.info("Banco de dados indisponivel. Usando dados locais.", error);
+  }
+}
+
+async function saveDataToApi() {
+  try {
+    await fetch(apiDataUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(db)
+    });
+  } catch (error) {
+    console.info("Nao foi possivel salvar no PostgreSQL. Dados mantidos localmente.", error);
+  }
 }
 
 function uid(prefix) {

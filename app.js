@@ -147,6 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindForms();
   bindOrderDialog();
   bindRecordActions();
+  bindSessionClose();
   render();
   hydrateDataFromApi();
 });
@@ -287,6 +288,16 @@ async function logout() {
   } finally {
     window.location.href = "/login";
   }
+}
+
+function bindSessionClose() {
+  window.addEventListener("pagehide", () => {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon("/api/logout");
+      return;
+    }
+    fetch("/api/logout", { method: "POST", keepalive: true });
+  });
 }
 
 function showView(viewName) {

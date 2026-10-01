@@ -101,15 +101,15 @@
     </style>
   </head>
   <body>
-    <form class="login-card" method="post" action="/api/login">
+    <form class="login-card" method="post" action="/api/login" autocomplete="off">
       <h1>Oficina Pro</h1>
       <p>Acesso restrito aos administradores.</p>
       <div id="login-error" class="error">Usuario ou senha incorretos.</div>
       <label>Usuario
-        <input name="username" autocomplete="username" required autofocus>
+        <input name="username" autocomplete="off" autocapitalize="none" spellcheck="false" required autofocus>
       </label>
       <label>Senha
-        <input name="password" type="password" autocomplete="current-password" required>
+        <input name="password" type="password" autocomplete="off" required>
       </label>
       <button type="submit">Entrar</button>
     </form>

@@ -76,6 +76,7 @@ function isAuthenticated(request) {
 
 function requireAuth(request, response, next) {
   if (isAuthenticated(request)) {
+    setNoStore(response);
     next();
     return;
   }
@@ -86,6 +87,12 @@ function requireAuth(request, response, next) {
   }
 
   response.redirect("/login");
+}
+
+function setNoStore(response) {
+  response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  response.setHeader("Pragma", "no-cache");
+  response.setHeader("Expires", "0");
 }
 
 function loginBlocked() {
@@ -113,6 +120,7 @@ app.get("/login", (request, response) => {
     response.redirect("/");
     return;
   }
+  setNoStore(response);
   response.sendFile(path.join(__dirname, "login.html"));
 });
 
@@ -133,8 +141,7 @@ app.post("/api/login", (request, response) => {
     `oficina_session=${encodeURIComponent(createSessionToken(username))}`,
     "HttpOnly",
     "SameSite=Lax",
-    "Path=/",
-    "Max-Age=43200"
+    "Path=/"
   ];
   if (secure) cookieParts.push("Secure");
   response.setHeader("Set-Cookie", cookieParts.join("; "));

@@ -101,19 +101,41 @@
     </style>
   </head>
   <body>
-    <form class="login-card" method="post" action="/api/login" autocomplete="off">
+    <form id="login-form" class="login-card" method="post" action="/api/login" autocomplete="off">
       <h1>Oficina Pro</h1>
       <p>Acesso restrito aos administradores.</p>
       <div id="login-error" class="error">Usuario ou senha incorretos.</div>
       <label>Usuario
-        <input name="username" autocomplete="off" autocapitalize="none" spellcheck="false" required autofocus>
+        <input id="login-user-visible" autocomplete="off" autocapitalize="none" spellcheck="false" required autofocus>
       </label>
       <label>Senha
-        <input name="password" type="password" autocomplete="off" required>
+        <input id="login-password-visible" type="password" autocomplete="new-password" autocapitalize="none" spellcheck="false" required>
       </label>
+      <input id="login-username" name="username" type="hidden">
+      <input id="login-password" name="password" type="hidden">
       <button type="submit">Entrar</button>
     </form>
     <script>
+      const visibleUser = document.querySelector("#login-user-visible");
+      const visiblePassword = document.querySelector("#login-password-visible");
+      const hiddenUser = document.querySelector("#login-username");
+      const hiddenPassword = document.querySelector("#login-password");
+
+      function clearLoginFields() {
+        visibleUser.value = "";
+        visiblePassword.value = "";
+        hiddenUser.value = "";
+        hiddenPassword.value = "";
+      }
+
+      window.addEventListener("pageshow", clearLoginFields);
+      setTimeout(clearLoginFields, 150);
+
+      document.querySelector("#login-form").addEventListener("submit", () => {
+        hiddenUser.value = visibleUser.value;
+        hiddenPassword.value = visiblePassword.value;
+      });
+
       if (new URLSearchParams(window.location.search).has("error")) {
         document.querySelector("#login-error").style.display = "block";
       }

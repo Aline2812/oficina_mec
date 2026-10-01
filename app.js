@@ -132,7 +132,7 @@ const money = new Intl.NumberFormat("pt-BR", {
 });
 
 const views = {
-  dashboard: "Painel de controle",
+  dashboard: "Controle de acompanhamento",
   orders: "Ordens de servico",
   clients: "Cadastro de clientes",
   vehicles: "Cadastro de veiculos",
